@@ -4,7 +4,7 @@ require('dotenv').config();
 
 async function sendMessageToTelegramChannel(message) {
     // Replace 'YOUR_BOT_TOKEN' with your actual bot token
-    const botToken = 'process.env.BOT_TOKEN';
+    const botToken =process.env.BOT_TOKEN ;
     // Replace 'YOUR_CHANNEL_ID' with your actual channel ID (starts with @)
     const channelId = '@Base_New_Pairs';
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -232,20 +232,9 @@ async function setupEventListener() {
         let message = '';
 
         if (token0 === excludedToken) {
-            message = `Token Address:\n${token1}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token1}">Dexscreener</a>
-            
-            `;
-            
- 
-            
-            // You can do further processing here
+            message = `Token Address:\n${token1}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token1}">Dexscreener</a> `;
         } else if(token1===excludedToken) {
-            message = `Token Address:\n${token0}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token0}">Dexscreener</a>
-            
-            `;
-            
-
-            // You can do further processing here
+            message = `Token Address:\n${token0}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token0}">Dexscreener</a>`;
         }
         else{
           message= `New pair created with different token :\n${token0,token1}`;
