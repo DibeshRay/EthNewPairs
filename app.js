@@ -3,9 +3,9 @@ const fetch = require('node-fetch-commonjs');
 require('dotenv').config();
 
 async function sendMessageToTelegramChannel(message) {
-    // Replace 'YOUR_BOT_TOKEN' with your actual bot token
+    
     const botToken =process.env.BOT_TOKEN ;
-    // Replace 'YOUR_CHANNEL_ID' with your actual channel ID (starts with @)
+    
     const channelId = '@Base_New_Pairs';
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
@@ -28,7 +28,7 @@ async function sendMessageToTelegramChannel(message) {
 }
 
 async function setupEventListener() {
-    // Your existing code for setting up the event listener
+    
     const factoryContractAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
     const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io/v3/a3f452e6cee74c58a5611d003c0c09f8");
     const factoryContractABI = [
@@ -251,8 +251,7 @@ async function run() {
   await setupEventListener();
 }
 
-// Call the async function
+
 run().catch(error => console.error(error));
 
-// To stop listening after a certain period (optional)
-// setTimeout(() => factoryContract.removeAllListeners("PairCreated"), 60000); // Unsubscribe after 60 seconds
+
