@@ -2,12 +2,24 @@ const { ethers } = require('ethers');
 const fetch = require('node-fetch-commonjs');
 require('dotenv').config();
 
-async function sendMessageToTelegramChannel(message) {
-    
-    const botToken =process.env.BOT_TOKEN ;
+
+async function sendMessageToTelegramChannel(message,chartLink) {
+   
+    const botToken = process.env.BOT_TOKEN ;
     
     const channelId = '@Base_New_Pairs';
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    const keyboard = {
+      inline_keyboard: [
+          [
+              {
+                  text: 'ETHSCAN',
+                  url: chartLink,
+              },
+          ],
+      ],
+  };
 
     const response = await fetch(telegramApiUrl, {
         method: 'POST',
@@ -18,6 +30,7 @@ async function sendMessageToTelegramChannel(message) {
             chat_id: channelId,
             text: message,
             parse_mode: 'HTML',
+            reply_markup: JSON.stringify(keyboard),
         }),
     });
 
@@ -25,6 +38,38 @@ async function sendMessageToTelegramChannel(message) {
     if (!responseData.ok) {
         console.error('Error sending message to Telegram:', responseData.description);
     }
+}
+
+async function getTokenInfo(contractAddress) {
+  try {
+      const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io/v3/a3f452e6cee74c58a5611d003c0c09f8");
+      const contract = new ethers.Contract(contractAddress, [
+          'function name() view returns (string)',
+          'function symbol() view returns (string)',
+          'function totalSupply() view returns (uint256)',
+          'function decimals() view returns (uint8)',
+          
+      ], provider);
+
+      
+      const tokenName = await contract.name();
+      const tokenSymbol = await contract.symbol();
+      const totalSupply = await contract.totalSupply();
+      const decimals= await contract.decimals();
+      const totalSupplyFormatted = ethers.utils.formatUnits(totalSupply, decimals);
+      
+      
+
+      return {
+          tokenName: tokenName,
+          tokenSymbol: tokenSymbol,
+          totalSupply: totalSupplyFormatted.toString(),
+          
+      };
+  } catch (error) { 
+      console.error('Error fetching token information:', error);
+      return null;
+  }
 }
 
 async function setupEventListener() {
@@ -226,32 +271,48 @@ async function setupEventListener() {
     ];
     const factoryContract = new ethers.Contract(factoryContractAddress, factoryContractABI, provider);
 
-    factoryContract.on("PairCreated", (token0, token1, pair, event) => {
+    factoryContract.on("PairCreated", async(token0, token1, pair, event) => {
         const excludedToken = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
         let message = '';
+        let chartLink = '';
 
         if (token0 === excludedToken) {
-            message = `Token Address:\n${token1}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token1}">Dexscreener</a> `;
+            message = `Token Address:\n\n<code>${token1}</code>\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token1}">Dexscreener</a> `;
+            chartLink = `https://etherscan.io/token/${token1}`;
+            const tokenInfo = await getTokenInfo(token1);
+            if (tokenInfo) {
+                message += `\n\nToken Information:\nName: ${tokenInfo.tokenName}\nSymbol: ${tokenInfo.tokenSymbol}\nTotal Supply: ${tokenInfo.totalSupply}`;
+            }
+ 
+            
+          
         } else if(token1===excludedToken) {
-            message = `Token Address:\n${token0}\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token0}">Dexscreener</a>`;
+            message = `Token Address:\n\n<code>${token0}</code>\n\nCharts : <a href="https://www.dexscreener.com/ethereum/${token0}">Dexscreener</a>`;
+            chartLink = `https://etherscan.io/token/${token0}`;
+
+            const tokenInfo = await getTokenInfo(token0);
+            if (tokenInfo) { 
+              message += `\n\nToken Information:\nName: ${tokenInfo.tokenName}\nSymbol: ${tokenInfo.tokenSymbol}\nTotal Supply: ${tokenInfo.totalSupply}`;
+            }
+          
+            
+
+            
         }
         else{
-          message= `New pair created with different token :\n${token0,token1}`;
+          message= `New pair created with different token :\n${token0}, ${token1}`;
         }
-
         console.log(message);
-        sendMessageToTelegramChannel(message);
+        sendMessageToTelegramChannel(message,chartLink);
+
+          
     }, { fromBlock: 1952508 });
 
-    console.log("Listening for new pairs...");
+    
 }
-
-async function run() {
-  await setupEventListener();
-}
-
-
-run().catch(error => console.error(error));
+console.log("Listening for new pairs...");
+        
+setupEventListener();       
 
 
